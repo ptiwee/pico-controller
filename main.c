@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "tusb.h"
+#include "config.h"
 
 void hid_init(void);
 void hid_task(void);
@@ -15,11 +16,6 @@ int main() {
     }
 }
 
-static uint8_t report[] = {
-    0x00, 0x00, 0x0f, 0x00,
-    0x00, 0x00, 0x00, 0x00,
-    0x00
-};
 
 void hid_init(void) {
     for (int gpio = 2; gpio < 14; gpio++) {
@@ -28,6 +24,13 @@ void hid_init(void) {
         gpio_pull_up(gpio);
     }
 }
+
+#if defined NEOGEO
+static uint8_t report[] = {
+    0x00, 0x00, 0x0f, 0x00,
+    0x00, 0x00, 0x00, 0x00,
+    0x00
+};
 
 void hid_task(void) {
     uint32_t gpios = ~gpio_get_all();
@@ -77,6 +80,47 @@ void hid_task(void) {
         tud_hid_report(0x00, report, sizeof(report));
     }
 }
+#endif
+
+#if defined ASTRO_CITY
+static uint8_t report[] = {
+    0x01, 0x7f, 0x7f, 0x7f,
+    0x7f, 0x0f, 0x00, 0x00,
+};
+
+void hid_task(void) {
+    uint32_t gpios = ~gpio_get_all();
+    uint8_t stick = (gpios & 0x3C00) >> 10;
+
+    report[3] =
+        (stick & 0x04) ? 0x00 :
+        (stick & 0x08) ? 0xff :
+        0x7f;
+
+    report[4] =
+        (stick & 0x01) ? 0x00 :
+        (stick & 0x02) ? 0xff :
+        0x7f;
+
+    report[5] =
+        ((gpios & (1 << 2)) ? 0x4f : 0x00) |
+        ((gpios & (1 << 3)) ? 0x2f : 0x00) |
+        ((gpios & (1 << 6)) ? 0x1f : 0x00) |
+        ((gpios & (1 << 5)) ? 0x8f : 0x00) |
+        0x0f;
+
+    report[6] =
+        ((gpios & (1 << 4)) ? 0x02 : 0x00) |
+        ((gpios & (1 << 7)) ? 0x01 : 0x00) |
+        ((gpios & (1 << 8)) ? 0x10 : 0x00) |
+        ((gpios & (1 << 9)) ? 0x20 : 0x00) |
+        0x00;
+
+    if (tud_hid_ready()) {
+        tud_hid_report(0x00, report, sizeof(report));
+    }
+}
+#endif
 
 uint16_t tud_hid_get_report_cb(
         uint8_t instance,
