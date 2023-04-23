@@ -1,5 +1,4 @@
 #include "pico/stdlib.h"
-#include "config.h"
 
 #if defined NEOGEO
 static const uint8_t device[] = {
@@ -67,11 +66,15 @@ static const uint8_t hid_report[] = {
 };
 #endif
 
-#if defined ASTRO_CITY
+#if (defined ASTRO_CITY) || (defined EGRET_II)
 static const uint8_t device[] = {
     0x12, 0x01, 0x00, 0x02,
     0x00, 0x00, 0x00, 0x40,
+#if defined ASTRO_CITY
     0xa3, 0x0c, 0x24, 0x00,
+#elif defined EGRET_II
+    0xe4, 0x0a, 0x02, 0x07,
+#endif
     0x00, 0x01, 0x00, 0x02,
     0x00, 0x01
 };

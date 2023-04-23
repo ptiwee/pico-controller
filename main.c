@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include "pico/stdlib.h"
 #include "tusb.h"
-#include "config.h"
 
 void hid_init(void);
 void hid_task(void);
@@ -82,15 +81,16 @@ void hid_task(void) {
 }
 #endif
 
-#if defined ASTRO_CITY
+#if (defined ASTRO_CITY) || (defined EGRET_II)
 static uint8_t report[] = {
     0x01, 0x7f, 0x7f, 0x7f,
-    0x7f, 0x0f, 0x00, 0x00,
+    0x7f, 0x0f, 0x00, 0x00
 };
 
 void hid_task(void) {
     uint32_t gpios = ~gpio_get_all();
     uint8_t stick = (gpios & 0x3C00) >> 10;
+    uint8_t controls = 0x00;
 
     report[3] =
         (stick & 0x04) ? 0x00 :
@@ -103,18 +103,37 @@ void hid_task(void) {
         0x7f;
 
     report[5] =
+#if defined ASTRO_CITY
         ((gpios & (1 << 2)) ? 0x4f : 0x00) |
         ((gpios & (1 << 3)) ? 0x2f : 0x00) |
         ((gpios & (1 << 6)) ? 0x1f : 0x00) |
         ((gpios & (1 << 5)) ? 0x8f : 0x00) |
         0x0f;
+#elif defined EGRET_II
+        (gpios & (1 << 3)) ? (1 << 6) : 0x00 |
+        (gpios & (1 << 4)) ? (1 << 5) : 0x00 |
+        (gpios & (1 << 6)) ? (1 << 7) : 0x00 |
+        (gpios & (1 << 7)) ? (1 << 4) : 0x00;
+#endif
 
     report[6] =
+#if defined ASTRO_CITY
         ((gpios & (1 << 4)) ? 0x02 : 0x00) |
         ((gpios & (1 << 7)) ? 0x01 : 0x00) |
         ((gpios & (1 << 8)) ? 0x10 : 0x00) |
         ((gpios & (1 << 9)) ? 0x20 : 0x00) |
         0x00;
+#elif defined EGRET_II
+        (gpios & (1 << 2)) ? (1 << 0) : 0x00 |
+        (gpios & (1 << 5)) ? (1 << 4) : 0x00 |
+        (gpios & (1 << 8)) ? (1 << 2) : 0x00 |
+        (gpios & (1 << 9)) ? (1 << 3) : 0x00;
+#endif
+        
+#if defined EGRET_II
+    // Home button
+    report[6] = (gpios & (1 << 8) && (gpios & (1 << 9))) ? (1 << 5) : report[6];
+#endif
 
     if (tud_hid_ready()) {
         tud_hid_report(0x00, report, sizeof(report));

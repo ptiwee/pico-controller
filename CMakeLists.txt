@@ -20,3 +20,6 @@ pico_enable_stdio_uart(pico-controller 1)
 pico_add_extra_outputs(pico-controller)
 
 target_link_libraries(pico-controller pico_stdlib tinyusb_device tinyusb_board)
+target_compile_definitions(pico-controller PUBLIC NEOGEO)
+target_compile_definitions(pico-controller PUBLIC ASTRO_CITY)
+target_compile_definitions(pico-controller PUBLIC EGRET_II)
