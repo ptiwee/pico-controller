@@ -20,6 +20,15 @@ pico_enable_stdio_uart(pico-controller 1)
 pico_add_extra_outputs(pico-controller)
 
 target_link_libraries(pico-controller pico_stdlib tinyusb_device tinyusb_board)
-target_compile_definitions(pico-controller PUBLIC NEOGEO)
-target_compile_definitions(pico-controller PUBLIC ASTRO_CITY)
-target_compile_definitions(pico-controller PUBLIC EGRET_II)
+
+set(CONTROLLER "NEOGEO" CACHE STRING "")
+
+if(CONTROLLER STREQUAL "NEOGEO")
+    target_compile_definitions(pico-controller PUBLIC NEOGEO)
+elseif(CONTROLLER STREQUAL "ASTRO_CITY")
+    target_compile_definitions(pico-controller PUBLIC ASTRO_CITY)
+elseif(CONTROLLER STREQUAL "EGRET_II")
+    target_compile_definitions(pico-controller PUBLIC EGRET_II)
+else()
+    message(FATAL_ERROR "Wrong value for controller")
+endif()
