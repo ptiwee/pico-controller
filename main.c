@@ -141,6 +141,46 @@ void hid_task(void) {
 }
 #endif
 
+#if defined SWITCH
+static uint8_t report[] = {
+    0x00, 0x00, 0x08, 0x80,
+    0x80, 0x80, 0x80, 0x00
+};
+
+void hid_task(void) {
+    uint32_t gpios = ~gpio_get_all();
+    uint8_t stick = (gpios & 0x3C00) >> 10;
+
+    report[0] = 
+        ((gpios & (1 << 2)) ? (1 << 1) : 0) |
+        ((gpios & (1 << 3)) ? (1 << 2) : 0) |
+        ((gpios & (1 << 4)) ? (1 << 5) : 0) |
+        ((gpios & (1 << 5)) ? (1 << 0) : 0) |
+        ((gpios & (1 << 6)) ? (1 << 3) : 0) |
+        ((gpios & (1 << 7)) ? (1 << 4) : 0) |
+        0;
+
+    report[1] =
+        ((gpios & (1 << 8)) ? (1 << 1) : 0) |
+        ((gpios & (1 << 9)) ? (1 << 4) : 0) |
+        0;
+
+    report[3] =
+        (stick & 0x04) ? 0x00 :
+        (stick & 0x08) ? 0xff :
+        0x80;
+
+    report[4] =
+        (stick & 0x01) ? 0x00 :
+        (stick & 0x02) ? 0xff :
+        0x80;
+
+    if (tud_hid_ready()) {
+        tud_hid_report(0x00, report, sizeof(report));
+    }
+}
+#endif
+
 uint16_t tud_hid_get_report_cb(
         uint8_t instance,
         uint8_t report_id,
